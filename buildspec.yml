@@ -10,6 +10,8 @@ phases:
       - npm install --save-dev serverless-wsgi serverless-python-requirements
   build:
     commands:
+      - virtualenv venv --python=python3
+      - source venv/bin/activate
       - serverless deploy
 
 cache:
