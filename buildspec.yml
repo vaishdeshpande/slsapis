@@ -10,7 +10,7 @@ phases:
       - npm install --save-dev serverless-wsgi serverless-python-requirements
   build:
     commands:
-      - serverless deploy --stage ${STAGE_NAME}
+      - serverless deploy
 
 cache:
   paths:
