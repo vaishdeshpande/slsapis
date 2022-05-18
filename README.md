@@ -1,14 +1,14 @@
 
 # Serverless Framework Python Flask API service backed by DynamoDB on AWS
 
-This template demonstrates how to develop and deploy a simple Python Flask API service, backed by DynamoDB, running on AWS Lambda using the traditional Serverless Framework.
+This template demonstrates a simple Python Flask API service, backed by DynamoDB, running on AWS Lambda using the traditional Serverless Framework.
 
 
 ## Anatomy of the template
 
-This template configures a single function, `api`, which is responsible for handling all incoming requests thanks to configured `httpApi` events. To learn more about `httpApi` event configuration options, please refer to [httpApi event docs](https://www.serverless.com/framework/docs/providers/aws/events/http-api/). As the events are configured in a way to accept all incoming requests, `Flask` framework is responsible for routing and handling requests internally. The implementation takes advantage of `serverless-wsgi`, which allows you to wrap WSGI applications such as Flask apps. To learn more about `serverless-wsgi`, please refer to corresponding [GitHub repository](https://github.com/logandk/serverless-wsgi). The template also relies on `serverless-python-requirements` plugin for packaging dependencies from `requirements.txt` file. For more details about `serverless-python-requirements` configuration, please refer to corresponding [GitHub repository](https://github.com/UnitedIncome/serverless-python-requirements).
+This template configures a single function, `api`, which is responsible for handling all incoming requests thanks to configured `httpApi` events. The implementation takes advantage of `serverless-wsgi`, which allows you to wrap WSGI applications such as Flask apps. The template also relies on `serverless-python-requirements` plugin for packaging dependencies from `requirements.txt` file. 
 
-Additionally, the template also handles provisioning of a DynamoDB database that is used for storing data about users. The Flask application exposes two endpoints, `POST /users` and `GET /user/{userId}`, which allow to create and retrieve users.
+Additionally, the template also handles provisioning of a DynamoDB database that is used for storing data about IAM users. The Flask application exposes five endpoints, `POST /users`, `GET /user/{userId}`, `GET /users`,`DELETE /users`and `GET /sync` which allow to create, retrieve specific user , retrieve all users, delete users and sync iam users and dynamodb.
 
 ## Usage
 
@@ -17,29 +17,15 @@ Additionally, the template also handles provisioning of a DynamoDB database that
 In order to package your dependencies locally with `serverless-python-requirements`, you need to have `Python3.8` installed locally. You can create and activate a dedicated virtual environment with the following command:
 
 ```bash
-python3.8 -m venv ./venv
-source ./venv/bin/activate
+npm install --save-dev serverless-wsgi serverless-python-requirements
+virtualenv venv --python=python3
+source venv/bin/activate
+(venv) $ pip install flask
+(venv) $ pip freeze > requirements.txt
 ```
 
-Alternatively, you can also use `dockerizePip` configuration from `serverless-python-requirements`. For details on that, please refer to corresponding [GitHub repository](https://github.com/UnitedIncome/serverless-python-requirements).
 
 ### Deployment
-
-This example is made to work with the Serverless Framework dashboard, which includes advanced features such as CI/CD, monitoring, metrics, etc.
-
-In order to deploy with dashboard, you need to first login with:
-
-```
-serverless login
-```
-
-install dependencies with:
-
-```
-npm install
-```
-
-and then perform deployment with:
 
 ```
 serverless deploy
@@ -57,39 +43,61 @@ functions:
   api: aws-python-flask-dynamodb-api-project-dev-api (1.5 MB)
 ```
 
-_Note_: In current form, after deployment, your API is public and can be invoked by anyone. For production deployments, you might want to configure an authorizer. For details on how to do that, refer to [httpApi event docs](https://www.serverless.com/framework/docs/providers/aws/events/http-api/).
+_Note_: In current form, after deployment, API is public and can be invoked by anyone.
 
 ### Invocation
 
 After successful deployment, you can create a new user by calling the corresponding endpoint:
 
 ```bash
-curl --request POST 'https://xxxxxx.execute-api.us-east-1.amazonaws.com/dev/users' --header 'Content-Type: application/json' --data-raw '{"name": "John", "userId": "someUserId"}'
+curl --request POST 'https://xxxxxx.execute-api.us-east-1.amazonaws.com/users' --header 'Content-Type: application/json' --data-raw '{"name": "John" }'
 ```
 
+
+
+You can later retrieve the user by `userName` by calling the following endpoint:
+
+```bash
+curl https://xxxxxxx.execute-api.us-east-1.amazonaws.com/users/userName
+```
 Which should result in the following response:
 
 ```bash
-{"userId":"someUserId","name":"John"}
+{"CREATED USER": userName}
 ```
 
-You can later retrieve the user by `userId` by calling the following endpoint:
+
+You can later retrieve all the iam users by calling the following endpoint:
 
 ```bash
-curl https://xxxxxxx.execute-api.us-east-1.amazonaws.com/dev/users/someUserId
+curl https://xxxxxxx.execute-api.us-east-1.amazonaws.com/users
 ```
+Which should result in the list of users as json objects 
 
+
+You can Sync all the iam users into dynamoDB by calling the following endpoint:
+
+```bash
+curl https://xxxxxxx.execute-api.us-east-1.amazonaws.com/sync
+```
 Which should result in the following response:
 
 ```bash
-{"userId":"someUserId","name":"John"}
+USERS SYNCED
 ```
 
-If you try to retrieve user that does not exist, you should receive the following response:
+
+You can later delete  the iam use by `userName` by calling the following endpoint:
 
 ```bash
-{"error":"Could not find user with provided \"userId\""}
+curl --request DELETE 'https://xxxxxx.execute-api.us-east-1.amazonaws.com/users' --header 'Content-Type: application/json' --data-raw '{"name": "John" }'
 ```
+Which should result in the following response:
+
+```bash
+{"DELETED USER": userName}
+```
+
 
 ### Local development
 
